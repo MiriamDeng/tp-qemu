@@ -118,4 +118,11 @@ def run(test, params, env):
         session = vm.reboot(session)
         vm.verify_alive()
         verify_hpt(test, params, session, hpt_default)
-    vm.verify_kernel_crash()
+    if "migration" in params.get("sub_type"):
+        # do migration
+        mig_timeout = float(params.get("mig_timeout", "3600"))
+        mig_protocol = params.get("migration_protocol", "tcp")
+        vm.migrate(mig_timeout, mig_protocol, env=env)
+        session = vm.wait_for_login()
+        verify_hpt(test, params, session, hpt_size)
+        vm.verify_kernel_crash()
