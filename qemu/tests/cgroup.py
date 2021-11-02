@@ -17,6 +17,7 @@ from aexpect import ExpectTimeoutError
 from aexpect import ExpectProcessTerminatedError
 from aexpect import ShellTimeoutError
 
+from virttest import arch
 from virttest.env_process import preprocess
 from virttest import qemu_monitor
 from virttest import error_context
@@ -1133,9 +1134,12 @@ def run(test, params, env):
             logging.error("Test requires at least 2 vCPUs.")
             raise exceptions.TestSkipError("Test requires at least 2 vCPUs.")
         # Check whether smp changed and recreate VM if so
-        if vm_cpus != params.get("smp", 0):
+        if vm_cpus != params.get_numeric("smp"):
             logging.info("Expected VM reload.")
             params['smp'] = vm_cpus
+            if arch.ARCH in ('ppc64', 'ppc64le'):
+                if params.get("cgroup_use_half_smp") == "yes":
+                    params['vcpu_maxcpus'] = params['smp']
             vm.create(params=params)
         # Verify vcpus matches prescription
         vcpus = vm.get_vcpu_pids(debug=False)
